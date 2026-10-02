@@ -3,47 +3,46 @@ using UnityEngine;
 
 namespace WhiteKNight
 {
-    public class ThirdPersonCharacterMovementUseCase : ICharacterMovementUseCase
+    public class ThirdPersonCharacterMovementUseCase : ICharacterMovementUseCase, ICharacterJumpEligibility
     {
-        private readonly CharactorGroundCheckController _groundCheckController;
         private ICharacterStateModel _stateModel; 
-        private CombatSetting _combatSetting = new CombatSetting();
+        private readonly CombatSetting _combatSetting = new CombatSetting();
+        private readonly CharacterGroundStateUpdater _groundStateProvider;
         public IReadOnlyReactiveProperty<bool> IsOnGround => _stateModel.IsOnGround;
         public IReadOnlyReactiveProperty<Vector3> GroundNormal => _stateModel.GroundNormal;
-
         public IReadOnlyReactiveProperty<bool> ShouldApplyRootMotion => _stateModel.ShouldApplyRootMotion;
         public IReadOnlyReactiveProperty<bool> IsJumping => _stateModel.IsJumping;
         public IReadOnlyReactiveProperty<bool> IsSpinJumping => _stateModel.IsSpinJumping;
         public IReadOnlyReactiveProperty<float> GroundDistance => _stateModel.GroundDistance;
 
         public ThirdPersonCharacterMovementUseCase(
-            CharactorGroundCheckController groundCheckController,
+           CharacterGroundStateUpdater groundStateProvider,
             ThirdPersonStateModel characterStateModel,
             CombatSetting combatSetting
             )
         {
-            _groundCheckController = groundCheckController;
+            _groundStateProvider = groundStateProvider;
             _stateModel = characterStateModel;
             _combatSetting = combatSetting;
         }
 
         public void Tick()
         {
-            var isGrounded = _groundCheckController.IsGrounded();
-            _stateModel.IsOnGround.Value = isGrounded;
-            if (isGrounded) { _stateModel.IsJumping.Value = false; }
+            var groundState = _groundStateProvider.GetState();
 
-            Vector3 normal = _groundCheckController.GetGroundNormal();
-            _stateModel.GroundNormal.Value = normal;
+            _stateModel.IsOnGround.Value = groundState.IsGrounded;
 
-            var checkDistance = _groundCheckController.GetGroundCheckDistance();
-            _stateModel.GroundCheckDistance.Value = checkDistance;
+            if (groundState.IsGrounded)
+            {
+                _stateModel.IsJumping.Value = false;
+            }
 
-            _stateModel.GroundDistance.Value = _groundCheckController.GetGroundDistance();
-            _stateModel.VerticalVelocity.Value = _groundCheckController.VerticalVelocity();
-
-            var applyRootMotion = _groundCheckController.CheckRayGroundHit();
-            _stateModel.ShouldApplyRootMotion.Value = applyRootMotion;
+            _stateModel.GroundNormal.Value = groundState.GroundNormal;
+            _stateModel.GroundCheckDistance.Value = groundState.GroundCheckDistance;
+            _stateModel.GroundDistance.Value = groundState.GroundDistance;
+            _stateModel.VerticalVelocity.Value = groundState.VerticalVelocity;
+            _stateModel.ShouldApplyRootMotion.Value =
+                groundState.ShouldApplyRootMotion;
         }
 
         public bool CanStartJump()

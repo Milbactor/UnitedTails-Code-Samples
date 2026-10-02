@@ -9,9 +9,10 @@ namespace WhiteKNight
         [SerializeField] private AICharacterView characterView;
         [SerializeField] private CharacterObstacleDetectionController obstacleController;
         [SerializeField] private AICharacterAttackView attackView;
+        [SerializeField] private SwordAttackView swordAttackView;
         [SerializeField] private AICharacterDamageView damageView;
         [SerializeField] private CharacterDepartureView departureView;
-        [SerializeField] private CharacterSetting characterSetting;
+        [SerializeField] private AICharacterSetting characterSetting;
         [SerializeField] private RotatingSpinAttackEffectView rotatingSpinAttackEffectView;
         [SerializeField] private List<PuritusView> puritusViews = new List<PuritusView>();
 
@@ -23,7 +24,9 @@ namespace WhiteKNight
             List<PuritusView> puritusViews = null)
         {
             groundCheckController = GetComponent<CharactorGroundCheckController>();
-            var combatSetting = GetComponent<CharacterSetting>().CombatSetting;
+            var groundStateProvider = new CharacterGroundStateUpdater(groundCheckController);
+
+            var combatSetting = characterSetting.CombatSetting;
 
             var characterLifeCycleNotifier = new CharacterDeathNotifier();
 
@@ -41,9 +44,9 @@ namespace WhiteKNight
             }*/
 
             var movementUseCase = new AICharacterMovementUseCase(
-                groundCheckController,
                  stateModel,
                  aiStateModel,
+                 groundStateProvider,
                  characterLifeCycleNotifier
                 );
             
@@ -112,6 +115,7 @@ namespace WhiteKNight
                 equipUseCase,
                 attackView,
                 behaviourInput,
+                swordAttackView,
                 characterLifeCycleNotifier,
                 rotatingSpinAttackEffectView
                 );

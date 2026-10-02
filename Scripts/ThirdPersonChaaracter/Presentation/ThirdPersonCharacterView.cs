@@ -6,24 +6,11 @@ namespace WhiteKNight
 {
     public class ThirdPersonCharacterView : MonoBehaviour, IThirdPersonCharacterView
     {
-        [SerializeField] float _movingTurnSpeed = 120;
-        [SerializeField] float _stationaryTurnSpeed = 60;
-        [SerializeField] private float _turnSmoothTime = 0.1f;
-        [SerializeField] float _jumpPower = 12f;
-        [SerializeField] float _spinJumpPower = 20f;
-        [Range(1f, 4f)][SerializeField] float _gravityMultiplier = 2f;
-        [SerializeField] float _RunCycleLegOffset = 0.2f; //specific to the character in sample assets, will need to be modified to work with others
-        [SerializeField] float _MoveSpeedMultiplier = 1f;
-        [SerializeField] float _AnimSpeedMultiplier = 1f;
-
+        [SerializeField] private float _animSpeedMultiplier = 1f;
         [Header("Value normalized to 1 when bringing to animator's falling speed")]
         [SerializeField] private float _maxFallSpeedForAnim = 8f;//max value which is normalized to 1 when bring to Animator range value -1~1. 8 means 1 in animator
-        [SerializeField] private float _airForwardMaxSpeed = 8f;
-        [SerializeField] private float _airForwardAcceleration = 15f;
 
-        [SerializeField] private float _airLateralMaxSpeed = 2f;
-        [SerializeField] private float _lateralAmount = 1f;
-        [SerializeField] private float _maxFallSpeed = 20f;
+        private CharacterMovementSettings _characterMovementSetting;
 
         [SerializeField] private  Rigidbody _rigidbody;
         [SerializeField] private Animator _animator;
@@ -63,6 +50,9 @@ namespace WhiteKNight
             _rigidbody.constraints = RigidbodyConstraints.FreezeRotationX 
                 | RigidbodyConstraints.FreezeRotationY 
                 | RigidbodyConstraints.FreezeRotationZ;
+
+            _characterMovementSetting = GetComponent<CharacterSetting>().CharacterMovementSettings;
+            if (_characterMovementSetting == null) { Debug.LogError("CharacterMovementSettings is missing"); }
         }
 
         private void FixedUpdate()
@@ -92,7 +82,7 @@ namespace WhiteKNight
                 Mathf.Atan2(localDirection.x, localDirection.z);
 
             _forwardAmount = localDirection.z;
-            _lateralAmount = localDirection.x;
+            _characterMovementSetting.LateralAmount = localDirection.x;
 
             if (Mathf.Abs(_turnAmount) < animatorDeadZone)
                 _turnAmount = 0f;
@@ -114,14 +104,14 @@ namespace WhiteKNight
            
             float runCycle =
                     Mathf.Repeat(
-                        Animator.GetCurrentAnimatorStateInfo(0).normalizedTime + _RunCycleLegOffset, 1);
+                        Animator.GetCurrentAnimatorStateInfo(0).normalizedTime + _characterMovementSetting.RunCycleLegOffset, 1);
             float jumpLeg = (runCycle < k_Half ? 1 : -1) * _forwardAmount;
             if (isGrounded) {
                 _animator.SetFloat("JumpLeg", jumpLeg);
             }
 
             if (isGrounded && direction.sqrMagnitude > 0.0001f) {
-                _animator.speed = _AnimSpeedMultiplier;
+                _animator.speed = _animSpeedMultiplier;
             }
             else {
                 Animator.speed = 1;
@@ -131,7 +121,7 @@ namespace WhiteKNight
         public void HandleAirborneMovement()
         {
             Vector3 extraGravityAcceleration =
-                Physics.gravity * (_gravityMultiplier - 1f);
+                Physics.gravity * (_characterMovementSetting.GravityMultiplier - 1f);
 
             _rigidbody.AddForce(
                 extraGravityAcceleration,
@@ -142,9 +132,9 @@ namespace WhiteKNight
 
             Vector3 velocity = _rigidbody.velocity;
 
-            if (velocity.y < -_maxFallSpeed)
+            if (velocity.y < -_characterMovementSetting.MaxFallSpeed)
             {
-                velocity.y = -_maxFallSpeed;
+                velocity.y = -_characterMovementSetting.MaxFallSpeed;
                 _rigidbody.velocity = velocity;
             }
         }
@@ -156,7 +146,7 @@ namespace WhiteKNight
 
             _rigidbody.velocity = new Vector3(
                 _rigidbody.velocity.x,
-                _jumpPower,
+                _characterMovementSetting.JumpPower,
                 _rigidbody.velocity.z
             );
 
@@ -171,7 +161,7 @@ namespace WhiteKNight
 
             _rigidbody.velocity = new Vector3(
                 _rigidbody.velocity.x,
-                _spinJumpPower,
+                _characterMovementSetting.SpinJumpPower,
                 _rigidbody.velocity.z
             );
 
@@ -184,8 +174,8 @@ namespace WhiteKNight
             float forwardInput = Mathf.Max(0f, _forwardAmount);
 
             Vector3 targetHorizontalVelocity =
-                transform.forward * forwardInput * _airForwardMaxSpeed
-                + transform.right * _lateralAmount * _airLateralMaxSpeed;
+                transform.forward * forwardInput * _characterMovementSetting.AirForwardMaxSpeed
+                + transform.right * _characterMovementSetting.LateralAmount * _characterMovementSetting.AirLateralMaxSpeed;
 
             Vector3 velocity = _rigidbody.velocity;
 
@@ -196,7 +186,7 @@ namespace WhiteKNight
                 Vector3.MoveTowards(
                     currentHorizontalVelocity,
                     targetHorizontalVelocity,
-                    _airForwardAcceleration * Time.fixedDeltaTime
+                    _characterMovementSetting.AirForwardAcceleration * Time.fixedDeltaTime
                 );
 
             velocity.x = newHorizontalVelocity.x;
@@ -211,15 +201,15 @@ namespace WhiteKNight
                 _smoothedTurnAmount,
                 _turnAmount,
                 ref _turnSmoothVelocity,
-                _turnSmoothTime
+                _characterMovementSetting.TurnSmoothTime
             );
 
             if (Mathf.Abs(_smoothedTurnAmount) < 0.01f)
                 return;
 
             float turnSpeed = Mathf.Lerp(
-                _stationaryTurnSpeed,
-                _movingTurnSpeed,
+               _characterMovementSetting.StationaryTurnSpeed,
+                _characterMovementSetting.MovingTurnSpeed,
                 Mathf.Abs(_forwardAmount)
             );
 
@@ -233,7 +223,7 @@ namespace WhiteKNight
             // this allows us to modify the positional speed before it's applied.
             if (_isGrounded && Time.deltaTime > 0)
             {
-                Vector3 v = (_animator.deltaPosition * _MoveSpeedMultiplier) / Time.deltaTime;
+                Vector3 v = (_animator.deltaPosition * _characterMovementSetting.MoveSpeedMultiplier) / Time.deltaTime;
 
                 // we preserve the existing y part of the current velocity.
                 v.y = Rigidbody.velocity.y;
@@ -255,7 +245,6 @@ namespace WhiteKNight
         {
             return transform.TransformDirection(localDirection);
         }
-
 
         void DrawCheckGroundDistance(float groundCheckDistance)
         {

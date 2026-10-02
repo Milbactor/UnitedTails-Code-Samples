@@ -10,14 +10,19 @@ namespace WhiteKNight
         private readonly AIBehaviourInput _input;
         private readonly AICharacterAttackView _view;
         private readonly RotatingSpinAttackEffectView _rotatingSpinAttackView;
+        private readonly SwordAttackView _swordAttackView;
 
         private readonly CompositeDisposable _disposables = new CompositeDisposable();
+
+        private bool _isDead = false;
+        public bool IsDead => _isDead;
 
         public AICharacterAttackPresenter(
             IAIAttackUseCase attackUseCase,
             IAIEquipUseCase equipUseCase,
             AICharacterAttackView view,
             AIBehaviourInput input,
+            SwordAttackView swordAttackView,
             CharacterDeathNotifier characterDeathNotifier,
             RotatingSpinAttackEffectView rotatingSpinAttackView
             )
@@ -26,14 +31,15 @@ namespace WhiteKNight
             _equipUseCase = equipUseCase;
             _input = input;
             _view = view;
+            _swordAttackView = swordAttackView;
             _rotatingSpinAttackView = rotatingSpinAttackView;
             characterDeathNotifier.Register(this);
  
-            _view.OnUpdate.Subscribe(_ =>
-            {
-                _attackUseCase.Tick();
-            })
-            .AddTo(_disposables);
+            _view.OnUpdate.Subscribe(_ => _attackUseCase.Tick())
+                .AddTo(_disposables);
+
+            _swordAttackView.OnSwordAttackHit.Subscribe(bounceDir => _view.Bounce(bounceDir))
+                .AddTo(_disposables);
 
             _attackUseCase.RequestAttack.DistinctUntilChanged()
                 .Where(x => x)
@@ -102,8 +108,6 @@ namespace WhiteKNight
               .AddTo(_disposables);
         }
 
-        private bool _isDead = false;
-        public bool IsDead => _isDead;
         public void OnDead()
         {
             if( _isDead ) return;

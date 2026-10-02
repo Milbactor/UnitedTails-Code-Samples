@@ -5,21 +5,21 @@ namespace WhiteKNight
 {
     public class AICharacterMovementUseCase : ICharacterMovementUseCase, ICharacterLifeCycle
     {
-        private CharactorGroundCheckController _groundCheckController;
         private ICharacterStateModel _stateModel;
         private IAIStateModel _aiStateModel;
+        private readonly CharacterGroundStateUpdater _groundStateProvider;
         public IReadOnlyReactiveProperty<bool> IsOnGround => _stateModel.IsOnGround;
         public IReadOnlyReactiveProperty<Vector3> GroundNormal => _stateModel.GroundNormal;
         public IReadOnlyReactiveProperty<bool> ShouldApplyRootMotion => _stateModel.ShouldApplyRootMotion;
 
         public AICharacterMovementUseCase(
-            CharactorGroundCheckController groundCheckController,
             ICharacterStateModel stateModel,
             IAIStateModel  aIStateModel,
+            CharacterGroundStateUpdater groundStateProvider,
             CharacterDeathNotifier characterDeathNotifier
             )
         {
-            _groundCheckController = groundCheckController;
+            _groundStateProvider = groundStateProvider;
             _stateModel = stateModel;
             _aiStateModel = aIStateModel;
             characterDeathNotifier.Register(this);
@@ -28,27 +28,22 @@ namespace WhiteKNight
         public void Tick()
         {
             if(_isDead) return;
+            var groundState = _groundStateProvider.GetState();
 
-            var isGrounded = _groundCheckController.IsGrounded();
-            _stateModel.IsOnGround.Value = isGrounded;
-            if (isGrounded) { _stateModel.IsJumping.Value = false; }
+            _stateModel.IsOnGround.Value = groundState.IsGrounded;
 
-            Vector3 normal = _groundCheckController.GetGroundNormal();
-            _stateModel.GroundNormal.Value = normal;
+            if (groundState.IsGrounded)
+            {
+                _stateModel.IsJumping.Value = false;
+            }
 
-            var checkDistance = _groundCheckController.GetGroundCheckDistance();
-            _stateModel.GroundCheckDistance.Value = checkDistance;
-
-            _stateModel.GroundDistance.Value = _groundCheckController.GetGroundDistance();
-            _stateModel.VerticalVelocity.Value = _groundCheckController.VerticalVelocity();
-
-            var applyRootMotion = _groundCheckController.CheckRayGroundHit();
-            _stateModel.ShouldApplyRootMotion.Value = applyRootMotion;
+            _stateModel.GroundNormal.Value = groundState.GroundNormal;
+            _stateModel.GroundCheckDistance.Value = groundState.GroundCheckDistance;
+            _stateModel.GroundDistance.Value = groundState.GroundDistance;
+            _stateModel.VerticalVelocity.Value = groundState.VerticalVelocity;
+            _stateModel.ShouldApplyRootMotion.Value =
+                groundState.ShouldApplyRootMotion;
         }
-
-        public bool CanStartJump(){ return !_isDead;} //TODO: change structre in ithirdpersonMoveusecase and add interface for thsese methods
-
-        public bool CanStartSpinJump() { return !_isDead; }
 
         public void OnJumpStarted()
         {
@@ -84,4 +79,3 @@ namespace WhiteKNight
         }
     }
 }
-
