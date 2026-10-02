@@ -1,0 +1,25 @@
+☁️ Claus.asset
+
+SpinAttackCoolDown = 1.2
+JumpAttackCoolDown = 1.0
+EnemyLeave = 16
+
+🧊 Godfried.asset
+
+SpinAttackCoolDown = 0.2
+JumpAttackCoolDown = 0.3
+EnemyLeave = 999
+
+🤣
+
+📖 Sirius.asset
+
+SpinAttackCoolDown = 2.5
+JumpAttackCoolDown = 1.8
+EnemyLeave = 8
+
+🔥 Axel.asset
+
+SpinAttackCoolDown = 0.7
+JumpAttackCoolDown = 0.6
+EnemyLeave = 20
