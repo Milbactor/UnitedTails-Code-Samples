@@ -24,6 +24,8 @@ namespace WhiteKNight
             List<PuritusView> puritusViews = null)
         {
             groundCheckController = GetComponent<CharactorGroundCheckController>();
+            var groundStateProvider = new CharacterGroundStateUpdater(groundCheckController);
+
             var combatSetting = characterSetting.CombatSetting;
 
             var characterLifeCycleNotifier = new CharacterDeathNotifier();
@@ -42,9 +44,9 @@ namespace WhiteKNight
             }*/
 
             var movementUseCase = new AICharacterMovementUseCase(
-                groundCheckController,
                  stateModel,
                  aiStateModel,
+                 groundStateProvider,
                  characterLifeCycleNotifier
                 );
             

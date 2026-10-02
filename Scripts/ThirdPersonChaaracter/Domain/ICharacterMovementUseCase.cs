@@ -11,12 +11,16 @@ namespace WhiteKNight
         IReadOnlyReactiveProperty<bool> ShouldApplyRootMotion { get; }
 
         void Tick();
-        bool CanStartJump();
         void OnJumpStarted();
         void OnSpinJumpStarted();
-        bool CanStartSpinJump();
         void OnJumpFinished();
         void OnSpinJumpFinished();
+    }
+
+    public interface ICharacterJumpEligibility
+    {
+        bool CanStartJump();
+        bool CanStartSpinJump();
     }
 }
 

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEngine;
 
 namespace WhiteKNight
@@ -26,13 +27,14 @@ namespace WhiteKNight
             List<PuritusView> puritusViews
             )
         {
+  
             characterID = characterID == null ? GetComponent<CharacterID>() : characterID;
             groundCheckController = GetComponent<CharactorGroundCheckController>();
-
+            var groundStateUpdater = new CharacterGroundStateUpdater(groundCheckController);
             model = new ThirdPersonStateModel(characterSetting);
             this.puritusViews = puritusViews;
             attackUseCase = new ThirdPersonCharacterAttackUseCase(model, characterSetting.CombatSetting);
-            movementUseCase = new ThirdPersonCharacterMovementUseCase(groundCheckController, model, characterSetting.CombatSetting);
+            movementUseCase = new ThirdPersonCharacterMovementUseCase(groundStateUpdater, model, characterSetting.CombatSetting);
             damageUseCase = new ThirdPersonCharacterDamageUseCase(model, characterSetting.CombatSetting);
             departureUsecCase = new CharacterDepartureUsecCase(model);
             hpUseCase = new HPUseCase(characterSetting.CombatSetting);
