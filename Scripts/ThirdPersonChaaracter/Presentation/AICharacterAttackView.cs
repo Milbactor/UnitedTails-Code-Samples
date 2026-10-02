@@ -46,10 +46,10 @@ namespace WhiteKNight
         public IObservable<Unit> OnSpinAttackFinished => _onSpinAttackFinished;
 
         private bool _isDead = false;
-        public bool IsDead => _isDead;
+        public bool IsDead => _isDead; 
+        private const float _upPower = 10f;
 
         private readonly CompositeDisposable _vfxDisposables = new();
-
 
         [Inject]
         public void Construct(CharacterDeathNotifier characterDeathNotifier)
@@ -251,6 +251,21 @@ namespace WhiteKNight
             _bounceRecoverDisposable = null;
             OnAttackSlayFinished();
             EndSpinAttack();
+        }
+
+        public void Bounce(Vector3 bounceDir)
+        {
+            if (_isDead)
+                return;
+            _rigidbody.velocity = bounceDir * _upPower;
+            Observable.Timer(
+                TimeSpan.FromSeconds(bounceRecoverTime))
+                .Subscribe(_ =>
+                {
+                    _rigidbody.velocity = Vector3.zero;
+                    _rigidbody.angularVelocity = Vector3.zero;
+                })
+                .AddTo(this);
         }
     }
 }

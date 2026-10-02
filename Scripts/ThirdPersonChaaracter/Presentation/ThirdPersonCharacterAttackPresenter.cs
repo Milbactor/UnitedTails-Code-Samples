@@ -21,26 +21,18 @@ namespace WhiteKNight
                 RotatingSpinAttackEffectView rotatingSpinAttackEffectView
             )
         {
-            this._useCase = useCase;
-            this._input = input;
-            this._view = view;
-            this._rotatingSpinAttackEffectView = rotatingSpinAttackEffectView;
-            this._swordAttackView = swordAttackView;
- 
-            _view.OnUpdate
-              .Subscribe(_ =>
-              {
-                  Tick();
-                  _useCase.Tick();
-              })
-              .AddTo(_disposables);
+            _useCase = useCase;
+            _input = input;
+            _view = view;
+            _rotatingSpinAttackEffectView = rotatingSpinAttackEffectView;
+            _swordAttackView = swordAttackView;
 
-            _swordAttackView.OnSwordAttackHit.Subscribe(bounceDir =>
-            {
-                _view.Bounce(bounceDir);
-            })
-             .AddTo(_disposables);
+            BindUseCases();
+            BindViews();
+        }
 
+        private void BindUseCases()
+        {
             _useCase.IsAttacking
                 .DistinctUntilChanged()
                 .Where(x => x)
@@ -66,29 +58,40 @@ namespace WhiteKNight
 
             _useCase.IsEquipping
                 .DistinctUntilChanged()
-                .Where(x => x)
-                .Subscribe(_ =>
-                {
-                    if (_useCase.CanEquip()) { _view.Equip(); }
-                })
+                .Where(isEquipping => isEquipping)
+                .Subscribe(_ => _view.Equip())
             .AddTo(_disposables);
 
             _useCase.IsUnequipping
                .DistinctUntilChanged()
-               .Where(x => x)
-               .Subscribe(_ =>
-               {
-                   if(_useCase.CanUnequip()) { _view.Unequip(); }
-               })
-               .AddTo(_disposables);
+               .Where(isUnequipping => isUnequipping)
+               .Subscribe(_ => _view.Unequip())
+            .AddTo(_disposables);
+        }
+
+        private void BindViews()
+        {
+            _view.OnUpdate
+              .Subscribe(_ =>
+              {
+                  Tick();
+                  _useCase.Tick();
+              })
+              .AddTo(_disposables);
+
+            _swordAttackView.OnSwordAttackHit.Subscribe(bounceDir =>
+            {
+                _view.Bounce(bounceDir);
+            })
+             .AddTo(_disposables);
 
             _view.OnAttackHitFinished
                 .Subscribe(_ =>
                 {
-                    _useCase.OnAttackFinished();            
+                    _useCase.OnAttackFinished();
                 })
                 .AddTo(_disposables);
- 
+
             _view.OnEquipFinished
                 .Subscribe(_ =>
                 {
@@ -102,12 +105,11 @@ namespace WhiteKNight
                      _useCase.OnUnequipped();
                  })
                  .AddTo(_disposables);
-
             _view.OnSpinAttackFinished
-                .Subscribe(_ =>
-                {
-                    _useCase.OnSpinAttackFinished();
-                }).AddTo(_disposables);
+            .Subscribe(_ =>
+            {
+                _useCase.OnSpinAttackFinished();
+            }).AddTo(_disposables);
         }
 
         public void OnEnemyDead()
@@ -130,7 +132,3 @@ namespace WhiteKNight
         }
     }
 }
-
-
-
-

@@ -30,7 +30,7 @@ namespace WhiteKNight
         private float _maxHP = 0f;
         public float MaxHP => _maxHP;
 
-        public ThirdPersonStateModel(CharacterSetting characterSetting)
+        public ThirdPersonStateModel(ICharacterSetting characterSetting)
         {
             _maxHP = characterSetting.CombatSetting.MaxHP;
         }

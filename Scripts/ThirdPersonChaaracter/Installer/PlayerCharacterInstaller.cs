@@ -8,6 +8,7 @@ namespace WhiteKNight
         [SerializeField] private ThirdPersonCharacterInput playerInput;
         [SerializeField] private ThirdPersonCharacterView characterView;
         [SerializeField] private ThirdPersonCharacterAttackView attackView;
+        [SerializeField] private SwordAttackView swordAttackView;
         [SerializeField] private ThirdPersonCharacterDamageView damageView;
         [SerializeField] private CharacterDepartureView departureView;
         [SerializeField] private ActorStateProvider actorStateProvider;
@@ -15,6 +16,7 @@ namespace WhiteKNight
         [SerializeField] private RotatingSpinAttackEffectView rotationSpinAttackEffectView;
         [SerializeField] private List<PuritusView> puritusViews;
         [SerializeField] private ResultUIView resultUIView;
+
 
         public override void Construct(
             CameraView cameraView, 
@@ -51,6 +53,7 @@ namespace WhiteKNight
                 attackUseCase,
                 playerInput,
                 attackView,
+                swordAttackView,
                 rotationSpinAttackEffectView
                 );
 
